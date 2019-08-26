@@ -1,3 +1,22 @@
+
+Updated Submission
+================== 
+
+Code is running now!  Test suite also works.
+
+__Q:__ Your user class instantiates a redis client on every instance. This seems inefficient.
+__A:__ It most certainly is!  This also might result in weird behavior at runtime.  It also masks other errors, such as the first line of `findUser()`.
+
+__Q:__ Why the explicit returns for true false?  Could you not simply return the result of your comparison which is boolean?
+__A:__  Absolutely!  Actually, when I intially refactored `hasSentThisYear()`, I replaced the unnecessary ternany operator expression `return this.redis.get(key) ? true : false;` with the simpler `return this.redis.get(key)`, before later changing entirely what the function returned.  Generally, I do not think that returning the result of a conditional, rather than an explicit boolean, is best practice in terms of readability, but I understand that it can make for tighter code.  As it doesn't affect functionality, this is something I'd usually catch / modify on a second or third pass, or adhere to whatever is the team's common practice.
+
+__Q:__ The findUser function was a big prob of the jr dev's code. 
+__A:__ Yes!  I looked closer at it when I was getting the code in working order.  It had a couple major issues.  The main one was the attempted creation of *two* `User` objects -- one created when fetching the user ID, and one created in the return statement -- when the intent is to only have one.  The first line would have failed anyway, as it is trying to create the `User` object without passing the required arguments.  
+
+
+Initial Submission
+==================
+
 ### Best Practices Being Violated: ###
 * Moved the iteration of the userbase out of the `main()` method and into its own function.
 

@@ -6,30 +6,36 @@ import unittest
 
 class TestBirthdayEmailer(unittest.TestCase):
   
-  # def __init__(self, methodName='runTest'):
-  #   today = datetime.date.today()
+  def setUp(self):
+    self.redis = redis.StrictRedis(
+    host="localhost",
+    port=6379, 
+    encoding ="utf-8",
+    decode_responses=True)
 
-  # need to run a client to do tests...
+    self.today = datetime.date.today()
+    self.testUser = User(2, str(self.today), self.redis)
+    self.key = "user-2"
+    self.redis.hmset('user-2', {'id' : '2', 'birthday' : '2000-08-25'})
+
+  def tearDown(self):
+    pass # no need to close connection, Redis handles automatically
 
   def test_isBirthday(self):
-    testUser = User(1, datetime.date.today())
-    self.assertTrue(testUser.isBirthday())
-    testUser.birthday = today - datetime.timedelta(1)  # yesterday's date
-    self.assertFalse(testUser.isBirthday())
+    self.assertTrue(self.testUser.isBirthday())
+    self.testUser.birthday = datetime.date.today() - datetime.timedelta(1)  # yesterday's date
+    self.assertFalse(self.testUser.isBirthday())
 
   def test_hasSentThisYear(self):
-    testUser = User(2, datetime.date.today()) 
-    key = "sent-" + str(2)
-    testUser.redis.set(key, today.year) 
-    self.assertTrue(testUser.hasSentThisYear(key))
-    testUser.redis.set(key, (today.year - 1)) 
-    self.assertFalse()    
+    self.redis.hset(self.key, 'sentYear', self.today.year)
+    self.assertTrue(self.testUser.hasSentThisYear(self.key))
+    self.redis.hset(self.key, 'sentYear', (self.today.year - 1))  # last yaer
+    self.assertFalse(self.testUser.hasSentThisYear(self.key))    
 
-  def test_setSentStatus(self):  
-    testUser = User(3, datetime.date.today())
-    key = "sent-" + str(3)
-    testUser.setSentStatus(key)
-    self.assertEquals(testUser.redis.get(key), today.year)
+  def test_setSentStatus(self):
+    self.testUser.setSentStatus(self.key)
+    self.assertEqual(self.testUser.redis.hget(self.key, 'sentYear'), str(self.today.year))
+    self.assertNotEqual(self.testUser.redis.hget(self.key, 'sentYear'), str(self.today.year - 1))
 
 
 class User:
@@ -79,7 +85,7 @@ def addTestEntries(client):
   client.hmset('user-2', {'id' : '2', 'birthday' : '2000-08-25'})
   client.hmset('user-3', {'id' : '3', 'birthday' : '2000-08-25', 'sentYear' : '2019'})
 
-# STUB function to get code to run completely:
+# stub function to get code to run completely:
 def sendBirthdayEmail(key):
   print("It's " + key + " 's birthday!")
 
@@ -87,10 +93,10 @@ def main():
 
   # arguments should be set / accessed via config file:
   client = redis.StrictRedis(
-  host="localhost",
-  port=6379, 
-  charset ="utf-8",
-  decode_responses=True)
+    host="localhost",
+    port=6379, 
+    charset ="utf-8",
+    decode_responses=True)
 
   addTestEntries(client)
   asyncio.run(iterateOverUsers(client))
